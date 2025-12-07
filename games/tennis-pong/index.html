@@ -241,9 +241,13 @@
         let gameRunning = false;
         let gameStarted = false;
 
+        // Detect mobile for scaling
+        const isMobile = window.innerWidth <= 900;
+        const mobileScale = isMobile ? 2 : 1;  // 2x bigger on mobile
+
         // Racquet properties (tennis racquet shape)
-        const racquetWidth = 15;
-        const racquetHeight = 70;  // Smaller racquet = harder
+        const racquetWidth = 15 * mobileScale;
+        const racquetHeight = 70 * mobileScale;  // Bigger on mobile
         const racquetSpeed = 9;     // Faster movement
 
         const leftRacquet = {
@@ -263,7 +267,7 @@
         };
 
         // Tennis ball properties
-        const ballRadius = 8;
+        const ballRadius = 8 * mobileScale;  // 2x bigger on mobile
         const initialSpeed = 8;  // Much faster starting speed
         const maxSpeed = 18;     // Insane maximum speed
         let ball = {
