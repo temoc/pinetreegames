@@ -113,7 +113,7 @@
         <div id="score">0 : 0</div>
         <canvas id="pongCanvas" width="800" height="600"></canvas>
         <div id="instructions">
-            W/S - Left Racquet | ↑/↓ - Right Racquet | SPACE - Start/Pause
+            W/S - Left Racquet | P/L - Right Racquet | SPACE - Start/Pause
         </div>
         <div id="gameOver">
             <div id="winnerText"></div>
@@ -319,11 +319,11 @@
                 leftRacquet.y += racquetSpeed;
             }
 
-            // Right racquet (Arrow keys)
-            if (keys['arrowup'] && rightRacquet.y > 0) {
+            // Right racquet (P/L)
+            if (keys['p'] && rightRacquet.y > 0) {
                 rightRacquet.y -= racquetSpeed;
             }
-            if (keys['arrowdown'] && rightRacquet.y < canvas.height - racquetHeight) {
+            if (keys['l'] && rightRacquet.y < canvas.height - racquetHeight) {
                 rightRacquet.y += racquetSpeed;
             }
         }
