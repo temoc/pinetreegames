@@ -7,7 +7,7 @@ A collection of fun, browser-based games built with HTML5 Canvas and JavaScript.
 ### Tennis Pong 🎾
 A retro-style tennis game with realistic physics and authentic tennis scoring!
 
-**Play Now:** [Live Demo](https://yourusername.github.io/pinetreegames/)
+**Play Now:** [Live Demo](https://temoc.github.io/pinetreegames/)
 
 #### Features
 - 🎾 **Realistic Tennis Scoring** - Love, 15, 30, 40, Deuce, Advantage
@@ -32,7 +32,7 @@ A retro-style tennis game with realistic physics and authentic tennis scoring!
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/pinetreegames.git
+git clone https://github.com/temoc/pinetreegames.git
 cd pinetreegames
 ```
 
