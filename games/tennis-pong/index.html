@@ -517,7 +517,7 @@
         function startGame() {
             gameStarted = true;
             gameRunning = true;
-            resetBall();
+            resetBall(true);  // Full reset on game start
         }
 
         // Reset game
@@ -529,14 +529,18 @@
             updateScore();
             gameOverDisplay.classList.remove('show');
             gameRunning = true;
-            resetBall();
+            resetBall(true);  // Full reset on game restart
         }
 
-        // Reset ball
-        function resetBall() {
+        // Reset ball (keeps current speed unless fullReset is true)
+        function resetBall(fullReset = false) {
             ball.x = canvas.width / 2;
             ball.y = canvas.height / 2;
-            ball.speed = initialSpeed;
+
+            // Only reset speed on full game reset, not between points
+            if (fullReset) {
+                ball.speed = initialSpeed;
+            }
 
             // Random direction
             const angle = (Math.random() * Math.PI / 2) - Math.PI / 4; // -45 to 45 degrees
