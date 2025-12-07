@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tennis Court Pong</title>
+    <title>Pine Tree Games 🌲</title>
     <style>
         * {
             margin: 0;
@@ -12,558 +12,316 @@
         }
 
         body {
-            background: #2d5016;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
+            padding: 40px 20px;
+            color: #fff;
         }
 
-        #gameContainer {
+        header {
             text-align: center;
+            margin-bottom: 60px;
         }
 
-        canvas {
-            border: 4px solid #fff;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            background: #2d5016;
+        h1 {
+            font-size: 64px;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
         }
 
-        #score {
-            color: #fff;
-            font-size: 48px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px #000;
-            letter-spacing: 40px;
+        .tagline {
+            font-size: 20px;
+            color: #a8d8ff;
+            font-weight: 300;
+        }
+
+        .picture-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .game-frame {
+            background: #fff;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: rotate(0deg);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .game-frame:nth-child(odd) {
+            transform: rotate(-2deg);
+        }
+
+        .game-frame:nth-child(even) {
+            transform: rotate(2deg);
+        }
+
+        .game-frame:hover {
+            transform: rotate(0deg) scale(1.05);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        .game-picture {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+        }
+
+        .game-picture.tennis {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c2f 100%);
+        }
+
+        .game-picture.table-tennis {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .game-picture.darts {
+            background: linear-gradient(135deg, #7c2d12 0%, #dc2626 100%);
+        }
+
+        .game-picture.golf {
+            background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+        }
+
+        .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .game-frame:hover .play-overlay {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .play-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s ease;
+        }
+
+        .game-frame:hover .play-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .game-info {
+            text-align: center;
+            color: #1a1a1a;
+        }
+
+        .game-title {
+            font-size: 28px;
             font-weight: bold;
+            margin-bottom: 8px;
+            color: #1a1a1a;
         }
 
-        #instructions {
-            color: #fff;
-            font-size: 16px;
-            margin-top: 20px;
-            text-shadow: 2px 2px 4px #000;
+        .game-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
         }
 
-        #gameOver {
-            display: none;
+        .game-tags {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #e5e7eb;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .tag.live {
+            background: #10b981;
+            color: white;
+        }
+
+        .tag.soon {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .coming-soon-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #fff;
-            font-size: 36px;
-            text-shadow: 3px 3px 6px #000;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .coming-soon .game-picture {
+            filter: grayscale(30%) brightness(0.8);
+        }
+
+        .coming-soon {
+            cursor: not-allowed;
+        }
+
+        .coming-soon:hover {
+            transform: rotate(0deg) scale(1.02);
+        }
+
+        footer {
+            margin-top: 60px;
             text-align: center;
+            color: #a8d8ff;
+            font-size: 14px;
         }
 
-        #gameOver.show {
-            display: block;
+        footer a {
+            color: #4ade80;
+            text-decoration: none;
         }
 
-        .blink {
-            animation: blink 1s infinite;
+        footer a:hover {
+            text-decoration: underline;
         }
 
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
+        @media (max-width: 768px) {
+            .picture-board {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            h1 {
+                font-size: 48px;
+            }
+
+            .game-picture {
+                font-size: 80px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="score">0 : 0</div>
-        <canvas id="pongCanvas" width="800" height="600"></canvas>
-        <div id="instructions">
-            W/S - Left Racquet | ↑/↓ - Right Racquet | SPACE - Start/Pause
+    <header>
+        <h1>🌲 Pine Tree Games 🌲</h1>
+        <p class="tagline">Classic arcade games with a modern twist</p>
+    </header>
+
+    <div class="picture-board">
+        <!-- Tennis Pong - LIVE -->
+        <a href="games/tennis-pong/" class="game-frame">
+            <div class="game-picture tennis">
+                🎾
+                <div class="play-overlay">
+                    <div class="play-icon">▶</div>
+                </div>
+            </div>
+            <div class="game-info">
+                <div class="game-title">Tennis Pong</div>
+                <div class="game-description">Retro tennis with real scoring & pickleball taunts!</div>
+                <div class="game-tags">
+                    <span class="tag live">● LIVE</span>
+                    <span class="tag">2 Players</span>
+                    <span class="tag">Fast Paced</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Table Tennis Pro - Coming Soon -->
+        <div class="game-frame coming-soon">
+            <div class="game-picture table-tennis">
+                🏓
+                <div class="coming-soon-overlay">COMING SOON</div>
+            </div>
+            <div class="game-info">
+                <div class="game-title">Table Tennis Pro</div>
+                <div class="game-description">Master spin shots and powerful smashes</div>
+                <div class="game-tags">
+                    <span class="tag soon">⏱ COMING SOON</span>
+                    <span class="tag">AI Opponent</span>
+                    <span class="tag">Tournament</span>
+                </div>
+            </div>
         </div>
-        <div id="gameOver">
-            <div id="winnerText"></div>
-            <div style="font-size: 20px; margin-top: 20px;" class="blink">Press SPACE to Play Again</div>
+
+        <!-- Dart Master - Coming Soon -->
+        <div class="game-frame coming-soon">
+            <div class="game-picture darts">
+                🎯
+                <div class="coming-soon-overlay">COMING SOON</div>
+            </div>
+            <div class="game-info">
+                <div class="game-title">Dart Master</div>
+                <div class="game-description">Precision aiming in classic pub darts</div>
+                <div class="game-tags">
+                    <span class="tag soon">⏱ COMING SOON</span>
+                    <span class="tag">501 Mode</span>
+                    <span class="tag">Cricket</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mini Golf - Coming Soon -->
+        <div class="game-frame coming-soon">
+            <div class="game-picture golf">
+                ⛳
+                <div class="coming-soon-overlay">COMING SOON</div>
+            </div>
+            <div class="game-info">
+                <div class="game-title">Mini Golf</div>
+                <div class="game-description">Navigate tricky courses with obstacles</div>
+                <div class="game-tags">
+                    <span class="tag soon">⏱ COMING SOON</span>
+                    <span class="tag">Creative Courses</span>
+                    <span class="tag">Power-ups</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('pongCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
-        const gameOverDisplay = document.getElementById('gameOver');
-        const winnerText = document.getElementById('winnerText');
-
-        // Game state
-        let gameRunning = false;
-        let gameStarted = false;
-
-        // Racquet properties (tennis racquet shape)
-        const racquetWidth = 15;
-        const racquetHeight = 70;  // Smaller racquet = harder
-        const racquetSpeed = 9;     // Faster movement
-
-        const leftRacquet = {
-            x: 20,
-            y: canvas.height / 2 - racquetHeight / 2,
-            width: racquetWidth,
-            height: racquetHeight,
-            dy: 0
-        };
-
-        const rightRacquet = {
-            x: canvas.width - 20 - racquetWidth,
-            y: canvas.height / 2 - racquetHeight / 2,
-            width: racquetWidth,
-            height: racquetHeight,
-            dy: 0
-        };
-
-        // Tennis ball properties
-        const ballRadius = 8;
-        const initialSpeed = 8;  // Much faster starting speed
-        const maxSpeed = 18;     // Insane maximum speed
-        let ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            dx: initialSpeed,
-            dy: initialSpeed,
-            speed: initialSpeed,
-            rotation: 0
-        };
-
-        // Tennis scoring system
-        let leftPoints = 0;  // 0, 15, 30, 40, advantage
-        let rightPoints = 0;
-        let leftGames = 0;
-        let rightGames = 0;
-        const winningGames = 3;  // First to 3 games wins the match
-
-        // Tennis score labels
-        function getTennisScore(points) {
-            const scores = ['0', '15', '30', '40'];
-            return points < 4 ? scores[points] : '40';
-        }
-
-        // Keyboard state
-        const keys = {};
-
-        // Event listeners
-        document.addEventListener('keydown', (e) => {
-            keys[e.key.toLowerCase()] = true;
-
-            if (e.key === ' ') {
-                e.preventDefault();
-                if (!gameStarted) {
-                    startGame();
-                } else if (gameOverDisplay.classList.contains('show')) {
-                    resetGame();
-                } else {
-                    gameRunning = !gameRunning;
-                }
-            }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            keys[e.key.toLowerCase()] = false;
-        });
-
-        // Start game
-        function startGame() {
-            gameStarted = true;
-            gameRunning = true;
-            resetBall();
-        }
-
-        // Reset game
-        function resetGame() {
-            leftPoints = 0;
-            rightPoints = 0;
-            leftGames = 0;
-            rightGames = 0;
-            updateScore();
-            gameOverDisplay.classList.remove('show');
-            gameRunning = true;
-            resetBall();
-        }
-
-        // Reset ball
-        function resetBall() {
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height / 2;
-            ball.speed = initialSpeed;
-
-            // Random direction
-            const angle = (Math.random() * Math.PI / 2) - Math.PI / 4; // -45 to 45 degrees
-            const direction = Math.random() > 0.5 ? 1 : -1;
-            ball.dx = Math.cos(angle) * ball.speed * direction;
-            ball.dy = Math.sin(angle) * ball.speed;
-        }
-
-        // Update racquet positions
-        function updateRacquets() {
-            // Left racquet (W/S)
-            if (keys['w'] && leftRacquet.y > 0) {
-                leftRacquet.y -= racquetSpeed;
-            }
-            if (keys['s'] && leftRacquet.y < canvas.height - racquetHeight) {
-                leftRacquet.y += racquetSpeed;
-            }
-
-            // Right racquet (Arrow keys)
-            if (keys['arrowup'] && rightRacquet.y > 0) {
-                rightRacquet.y -= racquetSpeed;
-            }
-            if (keys['arrowdown'] && rightRacquet.y < canvas.height - racquetHeight) {
-                rightRacquet.y += racquetSpeed;
-            }
-        }
-
-        // Update ball position
-        function updateBall() {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-
-            // Add spin/rotation effect - faster spin at higher speeds
-            ball.rotation += 0.15 + (ball.speed / 100);
-
-            // Top and bottom collision
-            if (ball.y - ballRadius <= 0 || ball.y + ballRadius >= canvas.height) {
-                ball.dy *= -1;
-                playSound(440, 0.1);
-            }
-
-            // Left racquet collision
-            if (ball.x - ballRadius <= leftRacquet.x + leftRacquet.width &&
-                ball.x >= leftRacquet.x &&
-                ball.y >= leftRacquet.y &&
-                ball.y <= leftRacquet.y + leftRacquet.height) {
-
-                // Calculate hit position (-1 to 1)
-                const hitPos = ((ball.y) - (leftRacquet.y + racquetHeight / 2)) / (racquetHeight / 2);
-                const angle = hitPos * Math.PI / 4; // Max 45 degrees
-
-                // Increase speed more aggressively, cap at max
-                ball.speed = Math.min(ball.speed + 0.5, maxSpeed);
-                ball.dx = Math.cos(angle) * ball.speed;
-                ball.dy = Math.sin(angle) * ball.speed;
-                ball.x = leftRacquet.x + leftRacquet.width + ballRadius;
-
-                playRacquetHitSound();
-            }
-
-            // Right racquet collision
-            if (ball.x + ballRadius >= rightRacquet.x &&
-                ball.x <= rightRacquet.x + rightRacquet.width &&
-                ball.y >= rightRacquet.y &&
-                ball.y <= rightRacquet.y + rightRacquet.height) {
-
-                const hitPos = ((ball.y) - (rightRacquet.y + racquetHeight / 2)) / (racquetHeight / 2);
-                const angle = hitPos * Math.PI / 4;
-
-                // Increase speed more aggressively, cap at max
-                ball.speed = Math.min(ball.speed + 0.5, maxSpeed);
-                ball.dx = -Math.cos(angle) * ball.speed;
-                ball.dy = Math.sin(angle) * ball.speed;
-                ball.x = rightRacquet.x - ballRadius;
-
-                playRacquetHitSound();
-            }
-
-            // Score points
-            if (ball.x < 0) {
-                scorePoint('right');
-            }
-
-            if (ball.x > canvas.width) {
-                scorePoint('left');
-            }
-        }
-
-        // Tennis scoring logic
-        function scorePoint(player) {
-            if (player === 'left') {
-                leftPoints++;
-            } else {
-                rightPoints++;
-            }
-
-            // Check for game win
-            if (leftPoints >= 4 || rightPoints >= 4) {
-                // Deuce situation
-                if (leftPoints === rightPoints) {
-                    // Deuce - continue playing
-                } else if (leftPoints >= rightPoints + 2) {
-                    // Left wins the game
-                    leftGames++;
-                    leftPoints = 0;
-                    rightPoints = 0;
-                    playSound(660, 0.5);
-
-                    if (leftGames >= winningGames) {
-                        endGame('LEFT PLAYER WINS THE MATCH!', 'right');
-                        return;
-                    }
-                } else if (rightPoints >= leftPoints + 2) {
-                    // Right wins the game
-                    rightGames++;
-                    leftPoints = 0;
-                    rightPoints = 0;
-                    playSound(660, 0.5);
-
-                    if (rightGames >= winningGames) {
-                        endGame('RIGHT PLAYER WINS THE MATCH!', 'left');
-                        return;
-                    }
-                }
-            }
-
-            updateScore();
-            playSound(200, 0.3);
-            resetBall();
-        }
-
-        // Update score display with tennis scoring
-        function updateScore() {
-            let leftDisplay, rightDisplay;
-
-            // Check for deuce/advantage
-            if (leftPoints >= 3 && rightPoints >= 3) {
-                if (leftPoints === rightPoints) {
-                    leftDisplay = 'DEUCE';
-                    rightDisplay = '';
-                } else if (leftPoints > rightPoints) {
-                    leftDisplay = 'AD';
-                    rightDisplay = '';
-                } else {
-                    leftDisplay = '';
-                    rightDisplay = 'AD';
-                }
-            } else {
-                leftDisplay = getTennisScore(leftPoints);
-                rightDisplay = getTennisScore(rightPoints);
-            }
-
-            // Display format: "Games | Points - Points | Games"
-            if (leftDisplay === 'DEUCE') {
-                scoreDisplay.textContent = `${leftGames} | DEUCE | ${rightGames}`;
-            } else if (leftDisplay === 'AD') {
-                scoreDisplay.textContent = `${leftGames} | ADV - | ${rightGames}`;
-            } else if (rightDisplay === 'AD') {
-                scoreDisplay.textContent = `${leftGames} | - ADV | ${rightGames}`;
-            } else {
-                scoreDisplay.textContent = `${leftGames} | ${leftDisplay} - ${rightDisplay} | ${rightGames}`;
-            }
-        }
-
-        // End game
-        function endGame(message, loser) {
-            gameRunning = false;
-            const pickleballTaunt = loser === 'left'
-                ? '\n\nLeft Player: Go play pickleball instead! 🥒'
-                : '\n\nRight Player: Go play pickleball instead! 🥒';
-            winnerText.innerHTML = message + '<br><br>' +
-                '<span style="font-size: 24px; color: #DFFF00;">' +
-                (loser === 'left' ? 'LEFT' : 'RIGHT') + ' PLAYER: Go play pickleball instead! 🥒</span>';
-            gameOverDisplay.classList.add('show');
-            playSound(330, 0.5);
-        }
-
-        // Draw tennis racquet
-        function drawRacquet(x, y, width, height) {
-            // Racquet frame (oval)
-            ctx.fillStyle = '#000';
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 3;
-
-            ctx.beginPath();
-            ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // String pattern
-            ctx.strokeStyle = '#666';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 5; i++) {
-                ctx.beginPath();
-                ctx.moveTo(x + (i * width/4), y);
-                ctx.lineTo(x + (i * width/4), y + height);
-                ctx.stroke();
-            }
-            for (let i = 0; i < 8; i++) {
-                ctx.beginPath();
-                ctx.moveTo(x, y + (i * height/7));
-                ctx.lineTo(x + width, y + (i * height/7));
-                ctx.stroke();
-            }
-        }
-
-        // Draw tennis ball with realistic texture
-        function drawTennisBall(x, y, radius) {
-            // Main ball (yellow-green)
-            ctx.fillStyle = '#DFFF00';
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Shadow/shading
-            const gradient = ctx.createRadialGradient(x - radius/3, y - radius/3, 0, x, y, radius);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)');
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Curved seam lines
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(x, y, radius * 0.7, ball.rotation, ball.rotation + Math.PI);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(x, y, radius * 0.7, ball.rotation + Math.PI, ball.rotation + Math.PI * 2);
-            ctx.stroke();
-        }
-
-        // Draw everything
-        function draw() {
-            // Clear canvas with tennis court green
-            ctx.fillStyle = '#2d5016';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw court lines (white)
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3;
-
-            // Center net line
-            ctx.setLineDash([]);
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, 0);
-            ctx.lineTo(canvas.width / 2, canvas.height);
-            ctx.stroke();
-
-            // Service boxes (decorative)
-            ctx.lineWidth = 2;
-            ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
-
-            // Draw racquets
-            drawRacquet(leftRacquet.x, leftRacquet.y, leftRacquet.width, leftRacquet.height);
-            drawRacquet(rightRacquet.x, rightRacquet.y, rightRacquet.width, rightRacquet.height);
-
-            // Draw tennis ball
-            drawTennisBall(ball.x, ball.y, ballRadius);
-
-            // Draw start message
-            if (!gameStarted) {
-                ctx.fillStyle = '#fff';
-                ctx.font = '36px Courier New';
-                ctx.textAlign = 'center';
-                ctx.fillText('PRESS SPACE TO START', canvas.width / 2, canvas.height / 2);
-            } else if (!gameRunning && !gameOverDisplay.classList.contains('show')) {
-                ctx.fillStyle = '#fff';
-                ctx.font = '36px Courier New';
-                ctx.textAlign = 'center';
-                ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
-            }
-        }
-
-        // Tennis racquet hit sound - realistic "thwack" sound
-        function playRacquetHitSound() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-                // Create noise for the "thwack" impact
-                const bufferSize = audioContext.sampleRate * 0.05; // 50ms
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-
-                // Generate noise with envelope
-                for (let i = 0; i < bufferSize; i++) {
-                    const envelope = Math.exp(-i / (bufferSize * 0.2)); // Sharp decay
-                    data[i] = (Math.random() * 2 - 1) * envelope;
-                }
-
-                const noise = audioContext.createBufferSource();
-                noise.buffer = buffer;
-
-                // Add some tonal content (string vibration)
-                const oscillator = audioContext.createOscillator();
-                oscillator.frequency.value = 150 + Math.random() * 100; // Vary pitch slightly
-                oscillator.type = 'triangle';
-
-                // Create filters for racquet resonance
-                const noiseFilter = audioContext.createBiquadFilter();
-                noiseFilter.type = 'bandpass';
-                noiseFilter.frequency.value = 2000;
-                noiseFilter.Q.value = 2;
-
-                const toneFilter = audioContext.createBiquadFilter();
-                toneFilter.type = 'lowpass';
-                toneFilter.frequency.value = 400;
-
-                // Gain nodes
-                const noiseGain = audioContext.createGain();
-                noiseGain.gain.setValueAtTime(0.3, audioContext.currentTime);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
-
-                const toneGain = audioContext.createGain();
-                toneGain.gain.setValueAtTime(0.15, audioContext.currentTime);
-                toneGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08);
-
-                // Connect everything
-                noise.connect(noiseFilter);
-                noiseFilter.connect(noiseGain);
-                noiseGain.connect(audioContext.destination);
-
-                oscillator.connect(toneFilter);
-                toneFilter.connect(toneGain);
-                toneGain.connect(audioContext.destination);
-
-                // Play
-                noise.start(audioContext.currentTime);
-                noise.stop(audioContext.currentTime + 0.05);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.08);
-            } catch (e) {
-                // Sound failed, continue without it
-            }
-        }
-
-        // Simple beep sound using Web Audio API
-        function playSound(frequency, duration) {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.frequency.value = frequency;
-                oscillator.type = 'square';
-
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + duration);
-            } catch (e) {
-                // Sound failed, continue without it
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            if (gameRunning) {
-                updateRacquets();
-                updateBall();
-            }
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Start the game loop
-        gameLoop();
-    </script>
+    <footer>
+        <p>Made with ❤️ using HTML5 Canvas & JavaScript</p>
+        <p><a href="https://github.com/temoc/pinetreegames" target="_blank">View on GitHub</a></p>
+        <p style="margin-top: 10px; font-size: 12px;">🤖 Built with <a href="https://claude.com/claude-code" target="_blank">Claude Code</a></p>
+    </footer>
 </body>
 </html>
