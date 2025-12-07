@@ -49,6 +49,14 @@
             text-shadow: 2px 2px 4px #000;
         }
 
+        .desktop-instructions {
+            display: inline;
+        }
+
+        .mobile-instructions {
+            display: none;
+        }
+
         #gameOver {
             display: none;
             position: absolute;
@@ -167,6 +175,14 @@
                 margin-top: 10px;
             }
 
+            .desktop-instructions {
+                display: none;
+            }
+
+            .mobile-instructions {
+                display: inline;
+            }
+
             .touch-controls {
                 display: flex;
             }
@@ -210,7 +226,8 @@
         <div id="score">0 : 0</div>
         <canvas id="pongCanvas" width="800" height="600"></canvas>
         <div id="instructions">
-            W/S - Left Racquet | P/L - Right Racquet | SPACE - Start/Pause
+            <span class="desktop-instructions">W/S - Left Racquet | P/L - Right Racquet | SPACE - Start/Pause</span>
+            <span class="mobile-instructions">Touch screen to start | Use buttons below to move paddles</span>
         </div>
         <div id="gameOver">
             <div id="winnerText"></div>
@@ -268,8 +285,9 @@
 
         // Tennis ball properties
         const ballRadius = 8 * mobileScale;  // 2x bigger on mobile
-        const initialSpeed = 8;  // Much faster starting speed
-        const maxSpeed = 18;     // Insane maximum speed
+        const initialSpeed = 4;  // Start slow
+        const maxSpeed = 20;     // Build up to insane speed
+        const speedIncrement = 0.3;  // Gradual speed increase per hit
         let ball = {
             x: canvas.width / 2,
             y: canvas.height / 2,
@@ -570,8 +588,8 @@
                 const hitPos = ((ball.y) - (leftRacquet.y + racquetHeight / 2)) / (racquetHeight / 2);
                 const angle = hitPos * Math.PI / 4; // Max 45 degrees
 
-                // Increase speed more aggressively, cap at max
-                ball.speed = Math.min(ball.speed + 0.5, maxSpeed);
+                // Gradually increase speed with each hit
+                ball.speed = Math.min(ball.speed + speedIncrement, maxSpeed);
                 ball.dx = Math.cos(angle) * ball.speed;
                 ball.dy = Math.sin(angle) * ball.speed;
                 ball.x = leftRacquet.x + leftRacquet.width + ballRadius;
@@ -588,8 +606,8 @@
                 const hitPos = ((ball.y) - (rightRacquet.y + racquetHeight / 2)) / (racquetHeight / 2);
                 const angle = hitPos * Math.PI / 4;
 
-                // Increase speed more aggressively, cap at max
-                ball.speed = Math.min(ball.speed + 0.5, maxSpeed);
+                // Gradually increase speed with each hit
+                ball.speed = Math.min(ball.speed + speedIncrement, maxSpeed);
                 ball.dx = -Math.cos(angle) * ball.speed;
                 ball.dy = Math.sin(angle) * ball.speed;
                 ball.x = rightRacquet.x - ballRadius;
