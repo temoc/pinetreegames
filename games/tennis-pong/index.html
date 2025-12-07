@@ -29,6 +29,8 @@
             border: 4px solid #fff;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
             background: #2d5016;
+            max-width: 100%;
+            height: auto;
         }
 
         #score {
@@ -106,6 +108,101 @@
                 transform: scale(0.8) rotate(10deg);
             }
         }
+
+        /* Mobile touch controls */
+        .touch-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .paddle-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .touch-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            backdrop-filter: blur(10px);
+        }
+
+        .touch-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 900px) {
+            body {
+                padding: 10px;
+            }
+
+            #score {
+                font-size: 32px;
+                letter-spacing: 20px;
+                margin-bottom: 10px;
+            }
+
+            #instructions {
+                font-size: 12px;
+                margin-top: 10px;
+            }
+
+            .touch-controls {
+                display: flex;
+            }
+
+            .distraction {
+                font-size: 18px;
+                padding: 12px 20px;
+            }
+
+            #gameOver {
+                font-size: 24px;
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            #score {
+                font-size: 24px;
+                letter-spacing: 10px;
+            }
+
+            #instructions {
+                font-size: 10px;
+            }
+
+            .touch-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+
+            .distraction {
+                font-size: 14px;
+                padding: 8px 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -118,6 +215,18 @@
         <div id="gameOver">
             <div id="winnerText"></div>
             <div style="font-size: 20px; margin-top: 20px;" class="blink">Press SPACE to Play Again</div>
+        </div>
+    </div>
+
+    <!-- Mobile touch controls -->
+    <div class="touch-controls">
+        <div class="paddle-controls" id="leftControls">
+            <button class="touch-btn" id="leftUp">▲</button>
+            <button class="touch-btn" id="leftDown">▼</button>
+        </div>
+        <div class="paddle-controls" id="rightControls">
+            <button class="touch-btn" id="rightUp">▲</button>
+            <button class="touch-btn" id="rightDown">▼</button>
         </div>
     </div>
 
@@ -298,6 +407,14 @@
         // Keyboard state
         const keys = {};
 
+        // Touch control state
+        const touchState = {
+            leftUp: false,
+            leftDown: false,
+            rightUp: false,
+            rightDown: false
+        };
+
         // Event listeners
         document.addEventListener('keydown', (e) => {
             keys[e.key.toLowerCase()] = true;
@@ -317,6 +434,62 @@
         document.addEventListener('keyup', (e) => {
             keys[e.key.toLowerCase()] = false;
         });
+
+        // Touch control event listeners
+        function setupTouchControls() {
+            const leftUp = document.getElementById('leftUp');
+            const leftDown = document.getElementById('leftDown');
+            const rightUp = document.getElementById('rightUp');
+            const rightDown = document.getElementById('rightDown');
+
+            // Prevent default touch behavior
+            [leftUp, leftDown, rightUp, rightDown].forEach(btn => {
+                btn.addEventListener('touchstart', (e) => e.preventDefault());
+            });
+
+            // Left paddle up
+            leftUp.addEventListener('touchstart', () => touchState.leftUp = true);
+            leftUp.addEventListener('touchend', () => touchState.leftUp = false);
+            leftUp.addEventListener('touchcancel', () => touchState.leftUp = false);
+
+            // Left paddle down
+            leftDown.addEventListener('touchstart', () => touchState.leftDown = true);
+            leftDown.addEventListener('touchend', () => touchState.leftDown = false);
+            leftDown.addEventListener('touchcancel', () => touchState.leftDown = false);
+
+            // Right paddle up
+            rightUp.addEventListener('touchstart', () => touchState.rightUp = true);
+            rightUp.addEventListener('touchend', () => touchState.rightUp = false);
+            rightUp.addEventListener('touchcancel', () => touchState.rightUp = false);
+
+            // Right paddle down
+            rightDown.addEventListener('touchstart', () => touchState.rightDown = true);
+            rightDown.addEventListener('touchend', () => touchState.rightDown = false);
+            rightDown.addEventListener('touchcancel', () => touchState.rightDown = false);
+
+            // Also support mouse events for testing
+            leftUp.addEventListener('mousedown', () => touchState.leftUp = true);
+            leftUp.addEventListener('mouseup', () => touchState.leftUp = false);
+            leftDown.addEventListener('mousedown', () => touchState.leftDown = true);
+            leftDown.addEventListener('mouseup', () => touchState.leftDown = false);
+            rightUp.addEventListener('mousedown', () => touchState.rightUp = true);
+            rightUp.addEventListener('mouseup', () => touchState.rightUp = false);
+            rightDown.addEventListener('mousedown', () => touchState.rightDown = true);
+            rightDown.addEventListener('mouseup', () => touchState.rightDown = false);
+
+            // Tap canvas to start/pause on mobile
+            canvas.addEventListener('click', () => {
+                if (!gameStarted) {
+                    startGame();
+                } else if (gameOverDisplay.classList.contains('show')) {
+                    resetGame();
+                } else {
+                    gameRunning = !gameRunning;
+                }
+            });
+        }
+
+        setupTouchControls();
 
         // Start game
         function startGame() {
@@ -352,19 +525,19 @@
 
         // Update racquet positions
         function updateRacquets() {
-            // Left racquet (W/S)
-            if (keys['w'] && leftRacquet.y > 0) {
+            // Left racquet (W/S keys or touch controls)
+            if ((keys['w'] || touchState.leftUp) && leftRacquet.y > 0) {
                 leftRacquet.y -= racquetSpeed;
             }
-            if (keys['s'] && leftRacquet.y < canvas.height - racquetHeight) {
+            if ((keys['s'] || touchState.leftDown) && leftRacquet.y < canvas.height - racquetHeight) {
                 leftRacquet.y += racquetSpeed;
             }
 
-            // Right racquet (P/L)
-            if (keys['p'] && rightRacquet.y > 0) {
+            // Right racquet (P/L keys or touch controls)
+            if ((keys['p'] || touchState.rightUp) && rightRacquet.y > 0) {
                 rightRacquet.y -= racquetSpeed;
             }
-            if (keys['l'] && rightRacquet.y < canvas.height - racquetHeight) {
+            if ((keys['l'] || touchState.rightDown) && rightRacquet.y < canvas.height - racquetHeight) {
                 rightRacquet.y += racquetSpeed;
             }
         }
