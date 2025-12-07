@@ -71,6 +71,41 @@
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
         }
+
+        /* Distraction popup styles */
+        .distraction {
+            position: fixed;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            pointer-events: none;
+            animation: distractPop 3s ease-in-out forwards;
+        }
+
+        @keyframes distractPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(-10deg);
+            }
+            10% {
+                opacity: 1;
+                transform: scale(1.2) rotate(5deg);
+            }
+            20% {
+                transform: scale(1) rotate(-2deg);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(1) rotate(2deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) rotate(10deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -138,10 +173,85 @@
         let rightGames = 0;
         const winningGames = 3;  // First to 3 games wins the match
 
+        // Distraction system
+        let lastDistractionTime = 0;
+        const distractionInterval = 8000; // Show distraction every 8 seconds minimum
+
+        const distractions = [
+            // Friendly taunts
+            { text: "Nice miss! 😂", color: "#ff6b6b", side: "random" },
+            { text: "Is that all you got? 💪", color: "#ffd93d", side: "random" },
+            { text: "My grandma hits harder! 👵", color: "#6bcf7f", side: "random" },
+            { text: "WEAK! 🙈", color: "#ff6b6b", side: "random" },
+            { text: "Try using TWO hands! 🤣", color: "#a29bfe", side: "random" },
+            { text: "Almost! ...Not really 😏", color: "#fd79a8", side: "random" },
+            { text: "YAWN... 🥱", color: "#ffeaa7", side: "random" },
+            { text: "Was that on purpose? 🤔", color: "#74b9ff", side: "random" },
+            { text: "Warming up or giving up? 🔥", color: "#ff7675", side: "random" },
+            { text: "I've seen better at pickleball! 🥒", color: "#00b894", side: "random" },
+
+            // Opponent sounds/reactions
+            { text: "😤 *GRUNT*", color: "#e17055", side: "opponent" },
+            { text: "😬 *nervous sweat*", color: "#74b9ff", side: "opponent" },
+            { text: "😱 OH NO!", color: "#fdcb6e", side: "opponent" },
+            { text: "💪 BRING IT!", color: "#00b894", side: "opponent" },
+            { text: "👀 *staring intensely*", color: "#a29bfe", side: "opponent" },
+            { text: "🤯 WHAT?!", color: "#ff7675", side: "opponent" },
+            { text: "😅 *chuckles nervously*", color: "#ffeaa7", side: "opponent" },
+            { text: "🎾 *ACE!*", color: "#00d2d3", side: "opponent" },
+            { text: "💀 I'm cooked...", color: "#636e72", side: "opponent" },
+            { text: "🔥 GET READY!", color: "#ff6348", side: "opponent" },
+
+            // Surprise elements
+            { text: "WAIT! Is that Federer?! 👀", color: "#a29bfe", side: "center" },
+            { text: "🦅 BIRD ON COURT!", color: "#74b9ff", side: "center" },
+            { text: "📱 Your phone is ringing! 📞", color: "#fdcb6e", side: "center" },
+            { text: "🎬 MATCH POINT!", color: "#ff6348", side: "center" },
+            { text: "⚡ LIGHTNING ROUND!", color: "#ffeaa7", side: "center" },
+            { text: "🎪 The crowd goes wild! 👏", color: "#00b894", side: "center" },
+            { text: "🌪️ TORNADO WARNING!", color: "#ff7675", side: "center" },
+            { text: "🚁 Helicopter overhead!", color: "#74b9ff", side: "center" }
+        ];
+
         // Tennis score labels
         function getTennisScore(points) {
             const scores = ['0', '15', '30', '40'];
             return points < 4 ? scores[points] : '40';
+        }
+
+        // Show random distraction
+        function showDistraction() {
+            const now = Date.now();
+            if (now - lastDistractionTime < distractionInterval) return;
+
+            lastDistractionTime = now;
+
+            const distraction = distractions[Math.floor(Math.random() * distractions.length)];
+            const div = document.createElement('div');
+            div.className = 'distraction';
+            div.textContent = distraction.text;
+            div.style.color = distraction.color;
+
+            // Position based on side
+            if (distraction.side === 'left' || (distraction.side === 'opponent' && Math.random() > 0.5)) {
+                div.style.left = '10%';
+                div.style.top = Math.random() * 60 + 20 + '%';
+            } else if (distraction.side === 'right' || (distraction.side === 'opponent' && Math.random() <= 0.5)) {
+                div.style.right = '10%';
+                div.style.top = Math.random() * 60 + 20 + '%';
+            } else { // center or random
+                div.style.left = Math.random() * 40 + 30 + '%';
+                div.style.top = Math.random() * 50 + 25 + '%';
+            }
+
+            document.body.appendChild(div);
+
+            // Play random grunt/taunt sound
+            const randomFreq = 150 + Math.random() * 200;
+            playSound(randomFreq, 0.15);
+
+            // Remove after animation
+            setTimeout(() => div.remove(), 3000);
         }
 
         // Keyboard state
@@ -285,6 +395,11 @@
                 leftPoints++;
             } else {
                 rightPoints++;
+            }
+
+            // Show taunt when someone scores
+            if (Math.random() > 0.4) {
+                showDistraction();
             }
 
             // Check for game win
@@ -557,6 +672,11 @@
             if (gameRunning) {
                 updateRacquets();
                 updateBall();
+
+                // Random chance to show distraction during gameplay
+                if (Math.random() < 0.003) { // ~18% chance per second at 60fps
+                    showDistraction();
+                }
             }
             draw();
             requestAnimationFrame(gameLoop);
