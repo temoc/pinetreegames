@@ -12,6 +12,8 @@ pinetreegames/
 ├── games/
 │   ├── tennis-pong/       # Tennis Pong game
 │   │   └── index.html
+│   ├── dice-duel/         # Dice Duel (Yahtzee)
+│   │   └── index.html
 │   ├── table-tennis/      # Coming soon
 │   ├── darts/             # Coming soon
 │   └── mini-golf/         # Coming soon
@@ -51,13 +53,45 @@ A retro-style tennis game with realistic physics and authentic tennis scoring!
 - Racquet size: 15x70 pixels
 - Ball radius: 8 pixels
 
-### 2. Table Tennis Pro 🏓 [COMING SOON]
+### 2. Dice Duel 🎲 [LIVE]
+A Yahtzee-style dice game with strategic scoring and online multiplayer!
+
+**[Play Dice Duel](https://temoc.github.io/pinetreegames/games/dice-duel/)**
+
+#### Features
+- 🎲 **Classic Yahtzee Gameplay** - All 13 scoring categories
+- 🎯 **Strategic Decisions** - Choose the best category for your roll
+- 🏆 **Bonus System** - Get 35 bonus points for 63+ in upper section
+- 🌐 **Online Multiplayer** - Play with friends via URL invite
+- 🎨 **Beautiful Dice** - Realistic die faces with animations
+- 🔄 **3 Rolls Per Turn** - Hold dice between rolls for strategy
+
+#### Scoring Categories
+**Upper Section:**
+- Ones, Twos, Threes, Fours, Fives, Sixes
+- Bonus: 35 points if upper section totals 63+
+
+**Lower Section:**
+- 3 of a Kind, 4 of a Kind (sum of all dice)
+- Full House (25 points)
+- Small Straight (30 points)
+- Large Straight (40 points)
+- Yahtzee - 5 of a kind (50 points)
+- Chance (sum of all dice)
+
+#### How to Play
+1. Roll up to 3 times per turn
+2. Click dice to hold them between rolls
+3. Choose a scoring category (click on scorecard)
+4. First player to complete all 13 categories wins!
+
+### 3. Table Tennis Pro 🏓 [COMING SOON]
 Master spin shots and smashes in this realistic table tennis simulator.
 
-### 3. Dart Master 🎯 [COMING SOON]
+### 4. Dart Master 🎯 [COMING SOON]
 Precision aiming and strategy in classic pub dart game.
 
-### 4. Mini Golf ⛳ [COMING SOON]
+### 5. Mini Golf ⛳ [COMING SOON]
 Navigate challenging courses with obstacles and tricky angles.
 
 ## 🚀 How to Play Locally

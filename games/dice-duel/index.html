@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice Duel 🎲</title>
+    <!-- PeerJS for multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        #gameContainer {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 48px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            font-size: 20px;
+            color: #ffd93d;
+            margin-bottom: 20px;
+        }
+
+        /* Multiplayer Menu */
+        #multiplayerMenu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid #fff;
+            border-radius: 20px;
+            padding: 40px;
+            z-index: 2000;
+            text-align: center;
+            min-width: 400px;
+            max-width: 90%;
+        }
+
+        #multiplayerMenu.hidden {
+            display: none;
+        }
+
+        #multiplayerMenu h2 {
+            color: #fff;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .mp-button {
+            display: block;
+            width: 100%;
+            padding: 15px 30px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mp-button:hover {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            transform: scale(1.05);
+        }
+
+        .mp-button.secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+
+        #inviteLink {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff;
+            padding: 15px;
+            border-radius: 10px;
+            color: #fff;
+            margin: 20px 0;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        #connectionStatus {
+            color: #ffd93d;
+            font-size: 18px;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* Game Layout */
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .player-area {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-area.active {
+            border-color: #ffd93d;
+            box-shadow: 0 0 30px rgba(255, 217, 61, 0.5);
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .player-score {
+            font-size: 32px;
+            color: #ffd93d;
+        }
+
+        /* Dice Area */
+        .dice-area {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .die {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 10px;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .die:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .die.held {
+            background: #ffd93d;
+            transform: scale(0.95);
+        }
+
+        .die.rolling {
+            animation: rollAnimation 0.5s ease;
+        }
+
+        @keyframes rollAnimation {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .roll-button {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        .roll-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            transform: scale(1.05);
+        }
+
+        .roll-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .rolls-left {
+            text-align: center;
+            font-size: 18px;
+            color: #ffd93d;
+            margin: 10px 0;
+        }
+
+        /* Scorecard */
+        .scorecard {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .score-category {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .score-category:hover:not(.filled):not(.disabled) {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .score-category.filled {
+            background: rgba(34, 197, 94, 0.3);
+            cursor: default;
+        }
+
+        .score-category.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .category-name {
+            font-weight: bold;
+        }
+
+        .category-score {
+            font-size: 20px;
+            color: #ffd93d;
+        }
+
+        .section-header {
+            font-size: 14px;
+            color: #ffd93d;
+            margin: 15px 0 10px 0;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .bonus-info {
+            font-size: 12px;
+            color: #aaa;
+            margin-left: 10px;
+        }
+
+        /* Game Over */
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid #ffd93d;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            z-index: 3000;
+            min-width: 400px;
+        }
+
+        #gameOver.show {
+            display: block;
+        }
+
+        #gameOver h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #ffd93d;
+        }
+
+        #gameOver .final-scores {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .game-board {
+                grid-template-columns: 1fr;
+            }
+
+            .die {
+                width: 60px;
+                height: 60px;
+            }
+
+            .dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            #multiplayerMenu {
+                min-width: 90%;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Multiplayer Menu -->
+    <div id="multiplayerMenu">
+        <h2>🎲 Dice Duel</h2>
+        <div id="connectionStatus"></div>
+        <button class="mp-button" id="playLocalBtn">Play Local (Same Device)</button>
+        <button class="mp-button" id="invitePlayerBtn">Invite Player (Online)</button>
+        <div id="inviteLink" style="display: none;"></div>
+        <button class="mp-button secondary" id="copyLinkBtn" style="display: none;">📋 Copy Invite Link</button>
+    </div>
+
+    <div id="gameContainer">
+        <header>
+            <h1>🎲 Dice Duel 🎲</h1>
+            <div class="game-info">Yahtzee-style dice game for two players</div>
+        </header>
+
+        <div class="game-board">
+            <!-- Player 1 -->
+            <div class="player-area" id="player1Area">
+                <div class="player-header">
+                    <div class="player-name">Player 1</div>
+                    <div class="player-score" id="player1Total">0</div>
+                </div>
+
+                <div class="scorecard" id="player1Scorecard">
+                    <div class="section-header">Upper Section <span class="bonus-info">(Bonus at 63+)</span></div>
+                    <div class="score-category" data-category="ones">
+                        <span class="category-name">Ones</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="twos">
+                        <span class="category-name">Twos</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="threes">
+                        <span class="category-name">Threes</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fours">
+                        <span class="category-name">Fours</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fives">
+                        <span class="category-name">Fives</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="sixes">
+                        <span class="category-name">Sixes</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category filled" data-category="bonus">
+                        <span class="category-name">Bonus</span>
+                        <span class="category-score">0</span>
+                    </div>
+
+                    <div class="section-header">Lower Section</div>
+                    <div class="score-category" data-category="threeOfKind">
+                        <span class="category-name">3 of a Kind</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fourOfKind">
+                        <span class="category-name">4 of a Kind</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fullHouse">
+                        <span class="category-name">Full House</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="smallStraight">
+                        <span class="category-name">Small Straight</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="largeStraight">
+                        <span class="category-name">Large Straight</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="yahtzee">
+                        <span class="category-name">Yahtzee</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="chance">
+                        <span class="category-name">Chance</span>
+                        <span class="category-score">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player 2 -->
+            <div class="player-area" id="player2Area">
+                <div class="player-header">
+                    <div class="player-name">Player 2</div>
+                    <div class="player-score" id="player2Total">0</div>
+                </div>
+
+                <div class="scorecard" id="player2Scorecard">
+                    <div class="section-header">Upper Section <span class="bonus-info">(Bonus at 63+)</span></div>
+                    <div class="score-category" data-category="ones">
+                        <span class="category-name">Ones</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="twos">
+                        <span class="category-name">Twos</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="threes">
+                        <span class="category-name">Threes</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fours">
+                        <span class="category-name">Fours</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fives">
+                        <span class="category-name">Fives</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="sixes">
+                        <span class="category-name">Sixes</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category filled" data-category="bonus">
+                        <span class="category-name">Bonus</span>
+                        <span class="category-score">0</span>
+                    </div>
+
+                    <div class="section-header">Lower Section</div>
+                    <div class="score-category" data-category="threeOfKind">
+                        <span class="category-name">3 of a Kind</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fourOfKind">
+                        <span class="category-name">4 of a Kind</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="fullHouse">
+                        <span class="category-name">Full House</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="smallStraight">
+                        <span class="category-name">Small Straight</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="largeStraight">
+                        <span class="category-name">Large Straight</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="yahtzee">
+                        <span class="category-name">Yahtzee</span>
+                        <span class="category-score">-</span>
+                    </div>
+                    <div class="score-category" data-category="chance">
+                        <span class="category-name">Chance</span>
+                        <span class="category-score">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dice Rolling Area -->
+        <div style="background: rgba(255, 255, 255, 0.1); border: 3px solid #fff; border-radius: 15px; padding: 30px; backdrop-filter: blur(10px); text-align: center;">
+            <h3 style="margin-bottom: 20px;">Roll the Dice!</h3>
+
+            <div class="dice-area" id="diceArea">
+                <!-- Dice will be generated here -->
+            </div>
+
+            <div class="rolls-left" id="rollsLeft">Rolls Left: 3</div>
+            <button class="roll-button" id="rollButton">🎲 Roll Dice</button>
+            <div style="font-size: 14px; color: #aaa; margin-top: 10px;">Click dice to hold them between rolls</div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOver">
+        <h2>🏆 Game Over! 🏆</h2>
+        <div class="final-scores" id="finalScores"></div>
+        <button class="mp-button" onclick="window.location.reload()">Play Again</button>
+    </div>
+
+    <script>
+        // ============================================
+        // GAME STATE
+        // ============================================
+
+        let currentPlayer = 1;
+        let rollsLeft = 3;
+        let dice = [1, 1, 1, 1, 1];
+        let heldDice = [false, false, false, false, false];
+        let gameStarted = false;
+
+        const player1Scores = {};
+        const player2Scores = {};
+
+        // ============================================
+        // MULTIPLAYER SYSTEM
+        // ============================================
+
+        let peer = null;
+        let connection = null;
+        let isHost = false;
+        let isOnlineMode = false;
+        let myPeerId = null;
+        let myPlayerNumber = 1;
+
+        const multiplayerMenu = document.getElementById('multiplayerMenu');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const playLocalBtn = document.getElementById('playLocalBtn');
+        const invitePlayerBtn = document.getElementById('invitePlayerBtn');
+        const inviteLink = document.getElementById('inviteLink');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+        // Check URL for join parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const joinPeerId = urlParams.get('join');
+
+        if (joinPeerId) {
+            connectionStatus.textContent = '🔌 Connecting...';
+            playLocalBtn.style.display = 'none';
+            invitePlayerBtn.style.display = 'none';
+            joinGame(joinPeerId);
+        }
+
+        playLocalBtn.addEventListener('click', () => {
+            multiplayerMenu.classList.add('hidden');
+            isOnlineMode = false;
+            startGame();
+        });
+
+        invitePlayerBtn.addEventListener('click', () => {
+            createOnlineGame();
+        });
+
+        copyLinkBtn.addEventListener('click', () => {
+            const linkText = inviteLink.textContent;
+            navigator.clipboard.writeText(linkText).then(() => {
+                const originalText = copyLinkBtn.textContent;
+                copyLinkBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    copyLinkBtn.textContent = originalText;
+                }, 2000);
+            });
+        });
+
+        function createOnlineGame() {
+            isHost = true;
+            isOnlineMode = true;
+            myPlayerNumber = 1;
+
+            connectionStatus.textContent = '🔄 Initializing...';
+            playLocalBtn.style.display = 'none';
+            invitePlayerBtn.style.display = 'none';
+
+            peer = new Peer();
+
+            peer.on('open', (id) => {
+                myPeerId = id;
+                const inviteUrl = `${window.location.origin}${window.location.pathname}?join=${id}`;
+
+                inviteLink.textContent = inviteUrl;
+                inviteLink.style.display = 'block';
+                copyLinkBtn.style.display = 'block';
+
+                connectionStatus.textContent = '⏳ Waiting for opponent...';
+            });
+
+            peer.on('connection', (conn) => {
+                connection = conn;
+                setupConnection();
+                connectionStatus.textContent = '✅ Connected! Starting game...';
+
+                setTimeout(() => {
+                    multiplayerMenu.classList.add('hidden');
+                    startGame();
+                }, 1500);
+            });
+
+            peer.on('error', (err) => {
+                connectionStatus.textContent = '❌ Error: ' + err.message;
+            });
+        }
+
+        function joinGame(hostPeerId) {
+            isHost = false;
+            isOnlineMode = true;
+            myPlayerNumber = 2;
+
+            peer = new Peer();
+
+            peer.on('open', (id) => {
+                myPeerId = id;
+                connection = peer.connect(hostPeerId);
+                setupConnection();
+            });
+
+            peer.on('error', (err) => {
+                connectionStatus.textContent = '❌ Connection failed: ' + err.message;
+            });
+        }
+
+        function setupConnection() {
+            connection.on('open', () => {
+                connectionStatus.textContent = '✅ Connected! Starting game...';
+
+                setTimeout(() => {
+                    multiplayerMenu.classList.add('hidden');
+                    if (!isHost) {
+                        startGame();
+                    }
+                }, 1500);
+            });
+
+            connection.on('data', (data) => {
+                handleRemoteData(data);
+            });
+
+            connection.on('close', () => {
+                alert('🔌 Opponent disconnected!');
+                window.location.href = window.location.origin + window.location.pathname;
+            });
+
+            connection.on('error', (err) => {
+                connectionStatus.textContent = '❌ Connection error: ' + err.message;
+            });
+        }
+
+        function sendToPeer(data) {
+            if (connection && connection.open) {
+                connection.send(data);
+            }
+        }
+
+        function handleRemoteData(data) {
+            if (data.type === 'roll') {
+                dice = data.dice;
+                heldDice = data.heldDice;
+                rollsLeft = data.rollsLeft;
+                renderDice();
+                updateRollsDisplay();
+            } else if (data.type === 'toggleHold') {
+                heldDice[data.index] = data.held;
+                renderDice();
+            } else if (data.type === 'scoreCategory') {
+                if (data.player === 1) {
+                    player1Scores[data.category] = data.score;
+                } else {
+                    player2Scores[data.category] = data.score;
+                }
+                updateScorecard(data.player);
+                currentPlayer = data.nextPlayer;
+                rollsLeft = 3;
+                heldDice = [false, false, false, false, false];
+                updateTurnDisplay();
+                renderDice();
+                updateRollsDisplay();
+            } else if (data.type === 'gameOver') {
+                endGame();
+            }
+        }
+
+        // ============================================
+        // DICE RENDERING
+        // ============================================
+
+        function createDie(value) {
+            const die = document.createElement('div');
+            die.className = 'die';
+
+            const patterns = {
+                1: [4],
+                2: [0, 8],
+                3: [0, 4, 8],
+                4: [0, 2, 6, 8],
+                5: [0, 2, 4, 6, 8],
+                6: [0, 2, 3, 5, 6, 8]
+            };
+
+            for (let i = 0; i < 9; i++) {
+                const dot = document.createElement('div');
+                if (patterns[value].includes(i)) {
+                    dot.className = 'dot';
+                }
+                die.appendChild(dot);
+            }
+
+            return die;
+        }
+
+        function renderDice() {
+            const diceArea = document.getElementById('diceArea');
+            diceArea.innerHTML = '';
+
+            dice.forEach((value, index) => {
+                const dieContainer = createDie(value);
+                if (heldDice[index]) {
+                    dieContainer.classList.add('held');
+                }
+
+                dieContainer.addEventListener('click', () => toggleHold(index));
+                diceArea.appendChild(dieContainer);
+            });
+        }
+
+        function toggleHold(index) {
+            if (rollsLeft === 3) return; // Can't hold before first roll
+            if (!isMyTurn()) return;
+
+            heldDice[index] = !heldDice[index];
+            renderDice();
+
+            if (isOnlineMode) {
+                sendToPeer({
+                    type: 'toggleHold',
+                    index: index,
+                    held: heldDice[index]
+                });
+            }
+        }
+
+        // ============================================
+        // ROLLING DICE
+        // ============================================
+
+        document.getElementById('rollButton').addEventListener('click', rollDice);
+
+        function rollDice() {
+            if (rollsLeft === 0) return;
+            if (!isMyTurn()) return;
+
+            const diceElements = document.querySelectorAll('.die');
+            diceElements.forEach((die, index) => {
+                if (!heldDice[index]) {
+                    die.classList.add('rolling');
+                }
+            });
+
+            setTimeout(() => {
+                for (let i = 0; i < 5; i++) {
+                    if (!heldDice[i]) {
+                        dice[i] = Math.floor(Math.random() * 6) + 1;
+                    }
+                }
+
+                rollsLeft--;
+                renderDice();
+                updateRollsDisplay();
+                updateCategoryPreviews();
+
+                if (isOnlineMode) {
+                    sendToPeer({
+                        type: 'roll',
+                        dice: dice,
+                        heldDice: heldDice,
+                        rollsLeft: rollsLeft
+                    });
+                }
+
+                diceElements.forEach(die => die.classList.remove('rolling'));
+            }, 500);
+        }
+
+        function updateRollsDisplay() {
+            document.getElementById('rollsLeft').textContent = `Rolls Left: ${rollsLeft}`;
+            const rollButton = document.getElementById('rollButton');
+            rollButton.disabled = rollsLeft === 0 || !isMyTurn();
+        }
+
+        function isMyTurn() {
+            if (!isOnlineMode) return true;
+            return currentPlayer === myPlayerNumber;
+        }
+
+        // ============================================
+        // SCORING LOGIC
+        // ============================================
+
+        function calculateScore(category, diceValues) {
+            const counts = {};
+            diceValues.forEach(val => counts[val] = (counts[val] || 0) + 1);
+            const sum = diceValues.reduce((a, b) => a + b, 0);
+            const sorted = [...diceValues].sort((a, b) => a - b);
+
+            switch(category) {
+                case 'ones': return diceValues.filter(d => d === 1).length * 1;
+                case 'twos': return diceValues.filter(d => d === 2).length * 2;
+                case 'threes': return diceValues.filter(d => d === 3).length * 3;
+                case 'fours': return diceValues.filter(d => d === 4).length * 4;
+                case 'fives': return diceValues.filter(d => d === 5).length * 5;
+                case 'sixes': return diceValues.filter(d => d === 6).length * 6;
+                case 'threeOfKind':
+                    return Object.values(counts).some(c => c >= 3) ? sum : 0;
+                case 'fourOfKind':
+                    return Object.values(counts).some(c => c >= 4) ? sum : 0;
+                case 'fullHouse':
+                    const hasThree = Object.values(counts).includes(3);
+                    const hasTwo = Object.values(counts).includes(2);
+                    return (hasThree && hasTwo) ? 25 : 0;
+                case 'smallStraight':
+                    const small = ['1234', '2345', '3456'];
+                    const sortedStr = [...new Set(sorted)].join('');
+                    return small.some(s => sortedStr.includes(s)) ? 30 : 0;
+                case 'largeStraight':
+                    const large = ['12345', '23456'];
+                    return large.includes(sorted.join('')) ? 40 : 0;
+                case 'yahtzee':
+                    return Object.values(counts).includes(5) ? 50 : 0;
+                case 'chance':
+                    return sum;
+                default:
+                    return 0;
+            }
+        }
+
+        function updateCategoryPreviews() {
+            if (rollsLeft === 3) return;
+
+            const scorecard = currentPlayer === 1 ?
+                document.getElementById('player1Scorecard') :
+                document.getElementById('player2Scorecard');
+
+            const categories = scorecard.querySelectorAll('.score-category:not(.filled)');
+
+            categories.forEach(cat => {
+                const category = cat.dataset.category;
+                if (category === 'bonus') return;
+
+                const score = calculateScore(category, dice);
+                const scoreSpan = cat.querySelector('.category-score');
+                scoreSpan.textContent = score;
+                scoreSpan.style.color = score > 0 ? '#4ade80' : '#ff6b6b';
+            });
+        }
+
+        // ============================================
+        // SCORE SELECTION
+        // ============================================
+
+        function setupScoreListeners() {
+            [1, 2].forEach(player => {
+                const scorecard = document.getElementById(`player${player}Scorecard`);
+                const categories = scorecard.querySelectorAll('.score-category');
+
+                categories.forEach(cat => {
+                    cat.addEventListener('click', () => {
+                        if (cat.classList.contains('filled')) return;
+                        if (cat.dataset.category === 'bonus') return;
+                        if (currentPlayer !== player) return;
+                        if (!isMyTurn()) return;
+                        if (rollsLeft === 3) return;
+
+                        const category = cat.dataset.category;
+                        const score = calculateScore(category, dice);
+
+                        selectCategory(player, category, score);
+                    });
+                });
+            });
+        }
+
+        function selectCategory(player, category, score) {
+            if (player === 1) {
+                player1Scores[category] = score;
+            } else {
+                player2Scores[category] = score;
+            }
+
+            updateScorecard(player);
+
+            // Switch turns
+            const nextPlayer = player === 1 ? 2 : 1;
+
+            if (isOnlineMode) {
+                sendToPeer({
+                    type: 'scoreCategory',
+                    player: player,
+                    category: category,
+                    score: score,
+                    nextPlayer: nextPlayer
+                });
+            }
+
+            currentPlayer = nextPlayer;
+            rollsLeft = 3;
+            heldDice = [false, false, false, false, false];
+
+            updateTurnDisplay();
+            renderDice();
+            updateRollsDisplay();
+
+            // Check if game is over
+            if (isGameOver()) {
+                setTimeout(() => endGame(), 1000);
+            }
+        }
+
+        function updateScorecard(player) {
+            const scores = player === 1 ? player1Scores : player2Scores;
+            const scorecard = document.getElementById(`player${player}Scorecard`);
+
+            Object.keys(scores).forEach(category => {
+                const cat = scorecard.querySelector(`[data-category="${category}"]`);
+                if (cat) {
+                    cat.classList.add('filled');
+                    const scoreSpan = cat.querySelector('.category-score');
+                    scoreSpan.textContent = scores[category];
+                    scoreSpan.style.color = '#ffd93d';
+                }
+            });
+
+            // Calculate bonus
+            const upperCategories = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
+            const upperSum = upperCategories.reduce((sum, cat) => sum + (scores[cat] || 0), 0);
+            const bonus = upperSum >= 63 ? 35 : 0;
+
+            const bonusCat = scorecard.querySelector('[data-category="bonus"]');
+            bonusCat.querySelector('.category-score').textContent = bonus;
+
+            // Update total
+            const total = Object.values(scores).reduce((a, b) => a + b, 0) + bonus;
+            document.getElementById(`player${player}Total`).textContent = total;
+        }
+
+        function updateTurnDisplay() {
+            const p1Area = document.getElementById('player1Area');
+            const p2Area = document.getElementById('player2Area');
+
+            p1Area.classList.toggle('active', currentPlayer === 1);
+            p2Area.classList.toggle('active', currentPlayer === 2);
+        }
+
+        function isGameOver() {
+            const p1Categories = Object.keys(player1Scores).filter(c => c !== 'bonus').length;
+            const p2Categories = Object.keys(player2Scores).filter(c => c !== 'bonus').length;
+            return p1Categories === 13 && p2Categories === 13;
+        }
+
+        function endGame() {
+            if (isOnlineMode && isHost) {
+                sendToPeer({ type: 'gameOver' });
+            }
+
+            const p1Total = parseInt(document.getElementById('player1Total').textContent);
+            const p2Total = parseInt(document.getElementById('player2Total').textContent);
+
+            const winner = p1Total > p2Total ? 'Player 1' :
+                          p2Total > p1Total ? 'Player 2' : 'Tie';
+
+            const finalScores = document.getElementById('finalScores');
+            finalScores.innerHTML = `
+                <div>Player 1: ${p1Total} points</div>
+                <div>Player 2: ${p2Total} points</div>
+                <div style="margin-top: 20px; color: #4ade80; font-size: 32px;">
+                    ${winner === 'Tie' ? "It's a Tie!" : `${winner} Wins!`}
+                </div>
+            `;
+
+            document.getElementById('gameOver').classList.add('show');
+        }
+
+        // ============================================
+        // GAME INITIALIZATION
+        // ============================================
+
+        function startGame() {
+            gameStarted = true;
+            renderDice();
+            updateRollsDisplay();
+            updateTurnDisplay();
+            setupScoreListeners();
+        }
+    </script>
+</body>
+</html>
