@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tennis Court Pong</title>
+    <!-- PeerJS for multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -55,6 +57,90 @@
 
         .mobile-instructions {
             display: none;
+        }
+
+        /* Multiplayer UI */
+        #multiplayerMenu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid #fff;
+            border-radius: 20px;
+            padding: 40px;
+            z-index: 2000;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        #multiplayerMenu.hidden {
+            display: none;
+        }
+
+        #multiplayerMenu h2 {
+            color: #fff;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .mp-button {
+            display: block;
+            width: 100%;
+            padding: 15px 30px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mp-button:hover {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            transform: scale(1.05);
+        }
+
+        .mp-button.secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+
+        #inviteLink {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #fff;
+            padding: 15px;
+            border-radius: 10px;
+            color: #fff;
+            margin: 20px 0;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        #connectionStatus {
+            color: #ffd93d;
+            font-size: 18px;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        @media (max-width: 500px) {
+            #multiplayerMenu {
+                min-width: 90%;
+                padding: 30px 20px;
+            }
+
+            #multiplayerMenu h2 {
+                font-size: 24px;
+            }
+
+            .mp-button {
+                font-size: 16px;
+                padding: 12px 20px;
+            }
         }
 
         #gameOver {
@@ -226,6 +312,16 @@
     </style>
 </head>
 <body>
+    <!-- Multiplayer Menu -->
+    <div id="multiplayerMenu">
+        <h2>🎾 Tennis Pong</h2>
+        <div id="connectionStatus"></div>
+        <button class="mp-button" id="playLocalBtn">Play Local (Same Device)</button>
+        <button class="mp-button" id="invitePlayerBtn">Invite Player (Online)</button>
+        <div id="inviteLink" style="display: none;"></div>
+        <button class="mp-button secondary" id="copyLinkBtn" style="display: none;">📋 Copy Invite Link</button>
+    </div>
+
     <div id="gameContainer">
         <div id="score">0 : 0</div>
         <canvas id="pongCanvas" width="800" height="600"></canvas>
@@ -925,6 +1021,269 @@
             draw();
             requestAnimationFrame(gameLoop);
         }
+
+        // ============================================
+        // MULTIPLAYER SYSTEM
+        // ============================================
+
+        let peer = null;
+        let connection = null;
+        let isHost = false;
+        let isOnlineMode = false;
+        let myPeerId = null;
+
+        const multiplayerMenu = document.getElementById('multiplayerMenu');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const playLocalBtn = document.getElementById('playLocalBtn');
+        const invitePlayerBtn = document.getElementById('invitePlayerBtn');
+        const inviteLink = document.getElementById('inviteLink');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+        // Check URL for join parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const joinPeerId = urlParams.get('join');
+
+        if (joinPeerId) {
+            // Auto-join mode
+            connectionStatus.textContent = '🔌 Connecting...';
+            playLocalBtn.style.display = 'none';
+            invitePlayerBtn.style.display = 'none';
+            joinGame(joinPeerId);
+        }
+
+        // Play Local button - same device gameplay
+        playLocalBtn.addEventListener('click', () => {
+            multiplayerMenu.classList.add('hidden');
+            isOnlineMode = false;
+        });
+
+        // Invite Player button - create online game
+        invitePlayerBtn.addEventListener('click', () => {
+            createOnlineGame();
+        });
+
+        // Copy invite link button
+        copyLinkBtn.addEventListener('click', () => {
+            const linkText = inviteLink.textContent;
+            navigator.clipboard.writeText(linkText).then(() => {
+                const originalText = copyLinkBtn.textContent;
+                copyLinkBtn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    copyLinkBtn.textContent = originalText;
+                }, 2000);
+            });
+        });
+
+        // Create online game (host)
+        function createOnlineGame() {
+            isHost = true;
+            isOnlineMode = true;
+
+            connectionStatus.textContent = '🔄 Initializing...';
+            playLocalBtn.style.display = 'none';
+            invitePlayerBtn.style.display = 'none';
+
+            // Initialize PeerJS
+            peer = new Peer();
+
+            peer.on('open', (id) => {
+                myPeerId = id;
+                const inviteUrl = `${window.location.origin}${window.location.pathname}?join=${id}`;
+
+                inviteLink.textContent = inviteUrl;
+                inviteLink.style.display = 'block';
+                copyLinkBtn.style.display = 'block';
+
+                connectionStatus.textContent = '⏳ Waiting for opponent...';
+            });
+
+            peer.on('connection', (conn) => {
+                connection = conn;
+                setupConnection();
+                connectionStatus.textContent = '✅ Connected! Starting game...';
+
+                setTimeout(() => {
+                    multiplayerMenu.classList.add('hidden');
+                    startGame();
+                }, 1500);
+            });
+
+            peer.on('error', (err) => {
+                connectionStatus.textContent = '❌ Error: ' + err.message;
+            });
+        }
+
+        // Join online game (guest)
+        function joinGame(hostPeerId) {
+            isHost = false;
+            isOnlineMode = true;
+
+            peer = new Peer();
+
+            peer.on('open', (id) => {
+                myPeerId = id;
+                connection = peer.connect(hostPeerId);
+                setupConnection();
+            });
+
+            peer.on('error', (err) => {
+                connectionStatus.textContent = '❌ Connection failed: ' + err.message;
+            });
+        }
+
+        // Setup connection handlers
+        function setupConnection() {
+            connection.on('open', () => {
+                connectionStatus.textContent = '✅ Connected! Starting game...';
+
+                setTimeout(() => {
+                    multiplayerMenu.classList.add('hidden');
+                    if (!isHost) {
+                        startGame();
+                    }
+                }, 1500);
+            });
+
+            connection.on('data', (data) => {
+                handleRemoteData(data);
+            });
+
+            connection.on('close', () => {
+                alert('🔌 Opponent disconnected!');
+                window.location.href = window.location.origin + window.location.pathname;
+            });
+
+            connection.on('error', (err) => {
+                connectionStatus.textContent = '❌ Connection error: ' + err.message;
+            });
+        }
+
+        // Send data to peer
+        function sendToPeer(data) {
+            if (connection && connection.open) {
+                connection.send(data);
+            }
+        }
+
+        // Handle incoming data from peer
+        function handleRemoteData(data) {
+            if (data.type === 'paddle') {
+                // Update opponent's paddle position
+                if (isHost) {
+                    // Guest is controlling right paddle
+                    rightRacquet.y = data.y;
+                } else {
+                    // Host is controlling left paddle
+                    leftRacquet.y = data.y;
+                }
+            } else if (data.type === 'gameState' && !isHost) {
+                // Guest receives full game state from host
+                ball.x = data.ball.x;
+                ball.y = data.ball.y;
+                ball.dx = data.ball.dx;
+                ball.dy = data.ball.dy;
+                ball.speed = data.ball.speed;
+                ball.rotation = data.ball.rotation;
+
+                leftPoints = data.leftPoints;
+                rightPoints = data.rightPoints;
+                leftGames = data.leftGames;
+                rightGames = data.rightGames;
+
+                updateScore();
+            } else if (data.type === 'gameOver') {
+                endGame(data.message, data.loser);
+            }
+        }
+
+        // Modified updateRacquets for multiplayer
+        const originalUpdateRacquets = updateRacquets;
+        updateRacquets = function() {
+            if (!isOnlineMode) {
+                // Local mode - both players control their paddles
+                originalUpdateRacquets();
+            } else if (isHost) {
+                // Host controls left paddle
+                if ((keys['w'] || touchState.leftUp) && leftRacquet.y > 0) {
+                    leftRacquet.y -= racquetSpeed;
+                }
+                if ((keys['s'] || touchState.leftDown) && leftRacquet.y < canvas.height - racquetHeight) {
+                    leftRacquet.y += racquetSpeed;
+                }
+
+                // Send paddle position to guest
+                sendToPeer({
+                    type: 'paddle',
+                    y: leftRacquet.y
+                });
+            } else {
+                // Guest controls right paddle
+                if ((keys['p'] || touchState.rightUp) && rightRacquet.y > 0) {
+                    rightRacquet.y -= racquetSpeed;
+                }
+                if ((keys['l'] || touchState.rightDown) && rightRacquet.y < canvas.height - racquetHeight) {
+                    rightRacquet.y += racquetSpeed;
+                }
+
+                // Send paddle position to host
+                sendToPeer({
+                    type: 'paddle',
+                    y: rightRacquet.y
+                });
+            }
+        };
+
+        // Track last game state sync time
+        let lastSyncTime = 0;
+        const syncInterval = 50; // Sync every 50ms (20 times per second)
+
+        // Modified updateBall for multiplayer
+        const originalUpdateBall = updateBall;
+        updateBall = function() {
+            if (!isOnlineMode || isHost) {
+                // Only host runs physics simulation in online mode
+                originalUpdateBall();
+
+                // Host sends game state to guest
+                if (isOnlineMode && isHost) {
+                    const now = Date.now();
+                    if (now - lastSyncTime > syncInterval) {
+                        sendToPeer({
+                            type: 'gameState',
+                            ball: {
+                                x: ball.x,
+                                y: ball.y,
+                                dx: ball.dx,
+                                dy: ball.dy,
+                                speed: ball.speed,
+                                rotation: ball.rotation
+                            },
+                            leftPoints: leftPoints,
+                            rightPoints: rightPoints,
+                            leftGames: leftGames,
+                            rightGames: rightGames
+                        });
+                        lastSyncTime = now;
+                    }
+                }
+            }
+            // Guest receives ball state from host, no local physics
+        };
+
+        // Modified endGame for multiplayer
+        const originalEndGame = endGame;
+        endGame = function(message, loser) {
+            originalEndGame(message, loser);
+
+            // Host broadcasts game over
+            if (isOnlineMode && isHost) {
+                sendToPeer({
+                    type: 'gameOver',
+                    message: message,
+                    loser: loser
+                });
+            }
+        };
 
         // Start the game loop
         gameLoop();
