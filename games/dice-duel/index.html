@@ -115,6 +115,122 @@
             text-shadow: 2px 2px 4px #000;
         }
 
+        /* Tutorial Cards */
+        #tutorialOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 5000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        #tutorialOverlay.hidden {
+            display: none;
+        }
+
+        .tutorial-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 4px solid #ffd93d;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tutorial-card h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #ffd93d;
+        }
+
+        .tutorial-card .card-content {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+        .tutorial-card .emoji-large {
+            font-size: 80px;
+            margin: 20px 0;
+        }
+
+        .tutorial-card .example {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        .tutorial-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .tutorial-button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tutorial-button:hover {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            transform: scale(1.05);
+        }
+
+        .tutorial-button.skip {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+
+        .tutorial-dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .tutorial-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .tutorial-dot.active {
+            background: #ffd93d;
+            transform: scale(1.3);
+        }
+
         /* Game Layout */
         .game-board {
             display: grid;
@@ -352,10 +468,48 @@
                 min-width: 90%;
                 padding: 30px 20px;
             }
+
+            .tutorial-card {
+                padding: 30px 20px;
+                max-width: 95%;
+            }
+
+            .tutorial-card h2 {
+                font-size: 28px;
+            }
+
+            .tutorial-card .card-content {
+                font-size: 16px;
+            }
+
+            .tutorial-card .emoji-large {
+                font-size: 60px;
+            }
+
+            .tutorial-card .example {
+                font-size: 14px;
+            }
+
+            .tutorial-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .tutorial-button {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Tutorial Overlay -->
+    <div id="tutorialOverlay">
+        <div class="tutorial-card" id="tutorialCard">
+            <!-- Content will be dynamically generated -->
+        </div>
+    </div>
+
     <!-- Multiplayer Menu -->
     <div id="multiplayerMenu">
         <h2>🎲 Dice Duel</h2>
@@ -536,6 +690,114 @@
     </div>
 
     <script>
+        // ============================================
+        // TUTORIAL SYSTEM
+        // ============================================
+
+        const tutorialCards = [
+            {
+                title: "Welcome to Dice Duel! 🎲",
+                emoji: "🎲",
+                content: "A Yahtzee-style game where you score points by rolling dice combinations. The player with the highest total score after 13 rounds wins!",
+                example: null
+            },
+            {
+                title: "How to Roll 🎯",
+                emoji: "🎯",
+                content: "You get <strong>3 rolls per turn</strong>. After each roll, click dice to <strong>hold them</strong> (they turn yellow). Held dice won't re-roll on your next roll.",
+                example: "💡 Tip: If you roll three 5s, hold them and re-roll the other two to try for more 5s!"
+            },
+            {
+                title: "Scoring Categories 📊",
+                emoji: "📊",
+                content: "After rolling, click a <strong>scoring category</strong> on your scorecard. Each category can only be used once per game!",
+                example: "Upper Section: Count matching numbers (Ones through Sixes)<br>Lower Section: Special combos (Full House, Straights, Yahtzee)"
+            },
+            {
+                title: "Upper Section Bonus 🏆",
+                emoji: "🏆",
+                content: "Score <strong>63+ points</strong> in the upper section (Ones through Sixes) and earn a <strong>35 point bonus</strong>!",
+                example: "💡 You need an average of 3 dice per number to get the bonus"
+            },
+            {
+                title: "Special Combos 🌟",
+                emoji: "🌟",
+                content: "<strong>Full House:</strong> 3 of one number + 2 of another (25 pts)<br><strong>Small Straight:</strong> 4 in a row (30 pts)<br><strong>Large Straight:</strong> 5 in a row (40 pts)<br><strong>Yahtzee:</strong> All 5 matching! (50 pts)",
+                example: null
+            },
+            {
+                title: "Ready to Play? 🚀",
+                emoji: "🚀",
+                content: "Complete all 13 categories before your opponent. Highest total score wins! Good luck and may the dice be in your favor!",
+                example: null
+            }
+        ];
+
+        let currentTutorialCard = 0;
+        const tutorialOverlay = document.getElementById('tutorialOverlay');
+        const tutorialCardElement = document.getElementById('tutorialCard');
+
+        function showTutorial() {
+            currentTutorialCard = 0;
+            tutorialOverlay.classList.remove('hidden');
+            renderTutorialCard();
+        }
+
+        function renderTutorialCard() {
+            const card = tutorialCards[currentTutorialCard];
+            const isLast = currentTutorialCard === tutorialCards.length - 1;
+            const isFirst = currentTutorialCard === 0;
+
+            let html = `
+                <h2>${card.title}</h2>
+                <div class="emoji-large">${card.emoji}</div>
+                <div class="card-content">
+                    <p>${card.content}</p>
+                    ${card.example ? `<div class="example">${card.example}</div>` : ''}
+                </div>
+                <div class="tutorial-dots">
+                    ${tutorialCards.map((_, i) => `<div class="tutorial-dot ${i === currentTutorialCard ? 'active' : ''}"></div>`).join('')}
+                </div>
+                <div class="tutorial-buttons">
+                    <button class="tutorial-button skip" onclick="skipTutorial()">Skip Tutorial</button>
+                    ${!isFirst ? '<button class="tutorial-button" onclick="prevTutorialCard()">← Back</button>' : ''}
+                    <button class="tutorial-button" onclick="nextTutorialCard()">${isLast ? "Let's Play! 🎮" : 'Next →'}</button>
+                </div>
+            `;
+
+            tutorialCardElement.innerHTML = html;
+        }
+
+        function nextTutorialCard() {
+            if (currentTutorialCard < tutorialCards.length - 1) {
+                currentTutorialCard++;
+                renderTutorialCard();
+            } else {
+                closeTutorial();
+            }
+        }
+
+        function prevTutorialCard() {
+            if (currentTutorialCard > 0) {
+                currentTutorialCard--;
+                renderTutorialCard();
+            }
+        }
+
+        function skipTutorial() {
+            closeTutorial();
+        }
+
+        function closeTutorial() {
+            tutorialOverlay.classList.add('hidden');
+            // Don't auto-hide multiplayer menu - let user choose mode
+        }
+
+        // Show tutorial on page load
+        window.addEventListener('load', () => {
+            showTutorial();
+        });
+
         // ============================================
         // GAME STATE
         // ============================================
