@@ -670,7 +670,9 @@
 
         <!-- Dice Rolling Area -->
         <div style="background: rgba(255, 255, 255, 0.1); border: 3px solid #fff; border-radius: 15px; padding: 30px; backdrop-filter: blur(10px); text-align: center;">
-            <h3 style="margin-bottom: 20px;">Roll the Dice!</h3>
+            <div id="currentTurnDisplay" style="font-size: 28px; font-weight: bold; color: #ffd93d; margin-bottom: 20px;">
+                🎲 Player 1's Turn
+            </div>
 
             <div class="dice-area" id="diceArea">
                 <!-- Dice will be generated here -->
@@ -678,7 +680,10 @@
 
             <div class="rolls-left" id="rollsLeft">Rolls Left: 3</div>
             <button class="roll-button" id="rollButton">🎲 Roll Dice</button>
-            <div style="font-size: 14px; color: #aaa; margin-top: 10px;">Click dice to hold them between rolls</div>
+            <div style="font-size: 14px; color: #aaa; margin-top: 10px;">
+                <div>Click dice to hold them between rolls</div>
+                <div id="instructionText" style="margin-top: 8px; color: #ffd93d;">Then click a category on your scorecard to score</div>
+            </div>
         </div>
     </div>
 
@@ -1242,9 +1247,15 @@
         function updateTurnDisplay() {
             const p1Area = document.getElementById('player1Area');
             const p2Area = document.getElementById('player2Area');
+            const turnDisplay = document.getElementById('currentTurnDisplay');
 
             p1Area.classList.toggle('active', currentPlayer === 1);
             p2Area.classList.toggle('active', currentPlayer === 2);
+
+            // Update turn text
+            if (turnDisplay) {
+                turnDisplay.textContent = `🎲 Player ${currentPlayer}'s Turn`;
+            }
         }
 
         function isGameOver() {
